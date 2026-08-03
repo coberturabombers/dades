@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cobertura dels parcs de bombers · Assemblea Bombers de Catalunya</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.0/chart.umd.min.js"></script>
+<style>
+:root{
+  --black:#0a0a0a; --black-soft:#161616; --panel:#1c1c1c;
+  --red:#c81d25; --red-dark:#7a0f14; --yellow:#f4c10f; --white:#f7f6f2;
+  --grey:#8a8a86; --line:#2b2b2b; --green:#5fd08a;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;background:var(--black);color:var(--white);font-family:Arial,Helvetica,sans-serif;-webkit-font-smoothing:antialiased;}
+#app{min-height:100vh;display:flex;flex-direction:column;}
+header.topbar{
+  background:repeating-linear-gradient(135deg,var(--black) 0 18px,#000 18px 20px),var(--black);
+  border-bottom:4px solid var(--yellow);padding:12px 20px;display:flex;align-items:center;
+  justify-content:space-between;gap:12px;flex-wrap:wrap;}
+.brand{display:flex;align-items:center;gap:12px;}
+.brand .mark{width:44px;height:44px;background:var(--red);border:3px solid var(--yellow);border-radius:4px;
+  display:flex;align-items:center;justify-content:center;font-weight:900;font-size:20px;color:var(--white);transform:rotate(-2deg);flex-shrink:0;}
+.brand h1{font-size:18px;letter-spacing:0.5px;margin:0;line-height:1.15;font-weight:800;text-transform:uppercase;}
+.brand h1 span{display:block;font-size:11px;font-weight:600;letter-spacing:2px;color:var(--yellow);margin-top:2px;}
+.date-nav{display:flex;align-items:center;gap:8px;}
+.date-nav select{padding:8px 12px;background:var(--panel);border:1px solid var(--line);color:var(--white);border-radius:3px;font-size:14px;font-weight:700;}
+.btn{border:2px solid var(--white);background:transparent;color:var(--white);padding:7px 12px;font-weight:800;font-size:12px;
+  letter-spacing:0.5px;text-transform:uppercase;cursor:pointer;border-radius:2px;transition:all .15s;}
+.btn:hover{background:var(--white);color:var(--black);}
+.btn.small{padding:5px 9px;font-size:11px;}
+.btn.yellow{background:var(--yellow);border-color:var(--yellow);color:var(--black);}
+main{flex:1;padding:20px;max-width:1200px;margin:0 auto;width:100%;}
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:22px;}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:5px;padding:14px 16px;}
+.kpi .num{font-size:34px;font-weight:900;line-height:1;}
+.kpi .lbl{font-size:11px;text-transform:uppercase;letter-spacing:0.6px;color:var(--grey);font-weight:700;margin-top:6px;}
+.kpi.crit .num{color:var(--red);} .kpi.warn .num{color:var(--yellow);} .kpi.closed .num{color:var(--white);}
+.section-title{font-size:13px;text-transform:uppercase;letter-spacing:1px;color:var(--yellow);font-weight:800;
+  margin:26px 0 12px;border-bottom:1px solid var(--line);padding-bottom:6px;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+@media(max-width:880px){.grid2{grid-template-columns:1fr;}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:5px;padding:16px;margin-bottom:22px;}
+.card h3{margin:0 0 12px;font-size:13px;text-transform:uppercase;letter-spacing:0.5px;color:var(--white);font-weight:800;}
+#parcMap{height:520px;border-radius:5px;border:1px solid var(--line);background:#111;}
+.leaflet-popup-content-wrapper{background:var(--panel);color:var(--white);border-radius:4px;border:2px solid var(--yellow);}
+.leaflet-popup-tip{background:var(--panel);} .leaflet-container a.leaflet-popup-close-button{color:var(--white);}
+table.reg-table{width:100%;border-collapse:collapse;font-size:12.5px;}
+table.reg-table th{text-align:center;font-size:10px;text-transform:uppercase;color:var(--grey);padding:7px 5px;border-bottom:1px solid var(--line);}
+table.reg-table th:first-child,table.reg-table td:first-child{text-align:left;font-weight:800;}
+table.reg-table td{padding:7px 5px;border-bottom:1px solid var(--line);text-align:center;}
+.cell-bad{color:var(--red);font-weight:800;} .cell-warn{color:var(--yellow);font-weight:700;}
+.cell-ok{color:var(--green);} .cell-zero{color:var(--grey);}
+.banner{padding:14px 18px;border-radius:5px;font-weight:900;font-size:16px;line-height:1.4;text-transform:uppercase;
+  margin-bottom:22px;letter-spacing:0.3px;
+  background:repeating-linear-gradient(45deg,var(--red) 0 12px,var(--black) 12px 24px);color:var(--white);border:2px solid var(--yellow);}
+.banner.ok{background:var(--yellow);color:var(--black);border-color:var(--black);}
+footer.foot{border-top:1px solid var(--line);padding:14px 20px;font-size:11px;color:var(--grey);text-align:center;background:var(--black-soft);}
+footer.foot b{color:var(--yellow);}
+.legend-inline{display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--grey);margin-top:10px;}
+.legend-inline span{display:flex;align-items:center;gap:5px;}
+.legend-inline .sw{width:12px;height:12px;border-radius:50%;display:inline-block;}
+.note{font-size:11.5px;color:var(--grey);line-height:1.5;margin-top:8px;}
+.chart-wrap{position:relative;height:300px;}
+.period-btn.active{background:var(--yellow);border-color:var(--yellow);color:var(--black);}
+#loading{text-align:center;padding:60px 20px;color:var(--grey);}
+#shareText{background:var(--black);border:1px solid var(--line);border-radius:4px;padding:14px;font-size:13px;line-height:1.6;white-space:pre-wrap;}
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="topbar">
+    <div class="brand">
+      <div class="mark">AB</div>
+      <h1>Assemblea Bombers de Catalunya<span>Cobertura dels parcs · Seguiment diari</span></h1>
+    </div>
+    <div class="date-nav">
+      <button class="btn small" id="prevDay">◀</button>
+      <select id="daySelect"></select>
+      <button class="btn small" id="nextDay">▶</button>
+      <button class="btn small yellow" id="coordBtn" style="margin-left:8px;">Coordinació</button>
+    </div>
+  </header>
+
+  <div id="coordModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:3000;align-items:flex-start;justify-content:center;padding:20px;overflow:auto;">
+    <div style="background:var(--panel);border:2px solid var(--yellow);border-radius:6px;max-width:680px;width:100%;padding:22px;position:relative;margin-top:20px;">
+      <button id="coordClose" style="position:absolute;top:12px;right:14px;background:none;border:none;color:var(--grey);font-size:24px;cursor:pointer;">&times;</button>
+      <h2 style="margin:0 0 4px;font-size:18px;text-transform:uppercase;">Coordinació · Càrrega manual</h2>
+      <div style="color:var(--grey);font-size:12px;margin-bottom:16px;">Per completar dies a partir del PDF del TRI. Requereix accés.</div>
+
+      <div id="coordLogin">
+        <label style="display:block;font-size:11px;text-transform:uppercase;color:var(--yellow);font-weight:700;margin-bottom:4px;">Usuari</label>
+        <input id="coUser" style="width:100%;padding:9px;background:var(--black);border:1px solid var(--line);color:var(--white);border-radius:3px;margin-bottom:12px;">
+        <label style="display:block;font-size:11px;text-transform:uppercase;color:var(--yellow);font-weight:700;margin-bottom:4px;">Contrasenya</label>
+        <input id="coPass" type="password" style="width:100%;padding:9px;background:var(--black);border:1px solid var(--line);color:var(--white);border-radius:3px;margin-bottom:14px;">
+        <div id="coMsg" style="font-size:12px;color:var(--red);margin-bottom:10px;"></div>
+        <button class="btn yellow small" id="coLoginBtn">Entrar</button>
+      </div>
+
+      <div id="coordPanel" style="display:none;">
+        <label style="display:block;font-size:11px;text-transform:uppercase;color:var(--yellow);font-weight:700;margin-bottom:4px;">Data del dia (AAAA-MM-DD)</label>
+        <input id="coDate" placeholder="2026-08-01" style="width:100%;padding:9px;background:var(--black);border:1px solid var(--line);color:var(--white);border-radius:3px;margin-bottom:14px;">
+        <div style="font-size:12px;color:var(--grey);margin-bottom:10px;">Introdueix els efectius reals de cada parc (mirant el PDF). Els mínims ja hi són.</div>
+        <div id="coParcInputs" style="max-height:320px;overflow:auto;border:1px solid var(--line);border-radius:4px;padding:10px;margin-bottom:14px;"></div>
+        <button class="btn yellow small" id="coGenerate">Generar dades del dia</button>
+        <div id="coOutput" style="display:none;margin-top:14px;">
+          <div style="font-size:12px;color:var(--yellow);margin-bottom:6px;">Copia aquest text i afegeix-lo a <b>data/history.json</b> al GitHub (o passa'l a qui gestioni el web):</div>
+          <textarea id="coJson" style="width:100%;height:120px;background:var(--black);border:1px solid var(--line);color:var(--white);border-radius:3px;font-size:11px;padding:8px;"></textarea>
+          <button class="btn small" id="coCopy" style="margin-top:8px;">Copiar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <main id="main">
+    <div id="loading">Carregant dades…</div>
+    <div id="content" style="display:none;">
+      <div id="banner"></div>
+      <div class="kpi-row" id="kpiRow"></div>
+
+      <div class="section-title">Detall parc a parc</div>
+      <div class="card">
+        <h3>Mapa de parcs · efectius mínims vs efectius disponibles</h3>
+        <div id="parcMap"></div>
+        <div class="legend-inline">
+          <span><i class="sw" style="background:#5fd08a"></i>Cobert</span>
+          <span><i class="sw" style="background:#f4c10f"></i>Falta 1</span>
+          <span><i class="sw" style="background:#c81d25"></i>Falten 2</span>
+          <span><i class="sw" style="background:#7a0f14;border:1px solid var(--yellow)"></i>Falten 3+ / tancat</span>
+        </div>
+        <div class="note" id="parcMapNote"></div>
+      </div>
+
+      <div class="section-title">Detall per regió — <span id="regDateLabel"></span></div>
+      <div class="card">
+        <table class="reg-table" id="regTable"></table>
+      </div>
+
+      <div class="section-title">Evolució en el temps</div>
+      <div class="card">
+        <div class="chart-wrap"><canvas id="chartParcs"></canvas></div>
+        <div class="note">Evolució dels parcs sota mínims i tancats. Es va omplint cada dia automàticament.</div>
+      </div>
+
+      <div class="section-title">Compartir</div>
+      <div class="card">
+        <h3>Resum per a xarxes / Telegram</h3>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;">
+          <button class="btn small period-btn active" data-period="dia">Diari</button>
+          <button class="btn small period-btn" data-period="setmana">Setmanal (dl–dg)</button>
+          <button class="btn small period-btn" data-period="mes">Mensual</button>
+        </div>
+        <div id="shareText"></div>
+        <button class="btn yellow small" id="copyShare" style="margin-top:10px;">Copiar text</button>
+      </div>
+    </div>
+  </main>
+
+  <footer class="foot">
+    Seguiment diari de la cobertura dels parcs de bombers a Catalunya · <b>Assemblea de Bombers de Catalunya</b> · Última actualització: <span id="lastUpdate">—</span>
+  </footer>
+</div>
+
+<script>
+const REGION_ORDER = ['REC','REG','REMN','REL','REMS','RET','RETE'];
+const REGION_NAMES = {REC:'Centre',REG:'Girona',REMN:'Metropolitana Nord',REL:'Lleida',REMS:'Metropolitana Sud',RET:'Tarragona',RETE:"Terres de l'Ebre"};
+let HISTORY = {}, DATES = [], currentIdx = 0, parcMap, parcMarkers = [], chart, sharePeriod = 'dia';
+
+function fmtDate(iso){ const [y,m,d]=iso.split('-'); return `${d}/${m}/${y}`; }
+function parcColor(f){ if(f<=0)return '#5fd08a'; if(f===1)return '#f4c10f'; if(f===2)return '#c81d25'; return '#7a0f14'; }
+
+async function loadData(){
+  try{
+    const res = await fetch('../data/history.json?t='+Date.now());
+    if(!res.ok) throw new Error('no data');
+    HISTORY = await res.json();
+  }catch(e){
+    // fallback: try same-folder data (for local testing)
+    try{ const r2 = await fetch('data/history.json?t='+Date.now()); HISTORY = await r2.json(); }
+    catch(e2){ document.getElementById('loading').textContent = 'No s\'han pogut carregar les dades.'; return; }
+  }
+  DATES = Object.keys(HISTORY).sort();
+  if(!DATES.length){ document.getElementById('loading').textContent = 'Encara no hi ha dades disponibles.'; return; }
+  currentIdx = DATES.length-1;
+  document.getElementById('loading').style.display='none';
+  document.getElementById('content').style.display='block';
+  document.getElementById('lastUpdate').textContent = fmtDate(DATES[currentIdx]);
+  initMap(); initUI(); renderAll();
+}
+
+function initMap(){
+  parcMap = L.map('parcMap',{zoomControl:true,scrollWheelZoom:false}).setView([41.7,1.7],8);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap'}).addTo(parcMap);
+}
+
+function renderParcMap(){
+  parcMarkers.forEach(m=>parcMap.removeLayer(m)); parcMarkers=[];
+  const snap = HISTORY[DATES[currentIdx]];
+  (snap.parcs||[]).forEach(p=>{
+    if(p.lat==null||p.lon==null||p.real==null) return;
+    const falten = Math.max(0,p.min-p.real), exc = Math.max(0,p.real-p.min);
+    const color = parcColor(falten), label = falten>0?'−'+falten:(exc>0?'+'+exc:'0');
+    const tc = falten<=1?'#0a0a0a':'#fff';
+    const icon = L.divIcon({html:`<div style="width:26px;height:26px;border-radius:50%;background:${color};border:2.5px solid #0a0a0a;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:11px;color:${tc};">${label}</div>`,className:'',iconSize:[26,26],iconAnchor:[13,13]});
+    const m = L.marker([p.lat,p.lon],{icon}).addTo(parcMap);
+    const banner = falten>0
+      ? `<div style="margin-top:8px;padding:8px;background:repeating-linear-gradient(45deg,#c81d25 0 8px,#0a0a0a 8px 16px);color:#fff;border:2px solid #f4c10f;border-radius:3px;font-weight:900;font-size:11px;text-transform:uppercase;">Falten ${falten} dotaci${falten===1?'ó':'ons'} a ${p.name}</div>`
+      : `<div style="margin-top:8px;padding:8px;background:#f4c10f;color:#0a0a0a;border-radius:3px;font-weight:900;font-size:11px;text-transform:uppercase;">Parc cobert</div>`;
+    m.bindPopup(`<div style="font-size:13px;"><div style="font-weight:900;font-size:15px;text-transform:uppercase;">${p.name}</div><div style="color:#8a8a86;font-size:11px;margin-bottom:6px;">${p.code} · ${p.region}</div><div style="display:flex;justify-content:space-between;"><span>Efectius mínims</span><b>${p.min}</b></div><div style="display:flex;justify-content:space-between;"><span>Efectius disponibles</span><b>${p.real}</b></div>${banner}</div>`);
+    m.bindTooltip(`<b>${p.name}</b> · ${p.real}/${p.min}`,{direction:'top'});
+    parcMarkers.push(m);
+  });
+  document.getElementById('parcMapNote').textContent = `Es mostren ${(snap.parcs||[]).filter(p=>p.real!=null).length} parcs. Algunes ubicacions són aproximades.`;
+}
+
+function renderKPIs(){
+  const c = HISTORY[DATES[currentIdx]].catalunya;
+  const dif = (c.diferencia==null) ? '—' : c.diferencia;
+  const kpis = [
+    {n:c.sota_minims,l:'Parcs sota mínims',cl:'crit'},
+    {n:c.tancats,l:'Parcs tancats',cl:'closed'},
+    {n:dif,l:'Diferència de dotacions',cl:(c.diferencia!=null&&c.diferencia<0)?'crit':'warn'},
+    {n:c.n_parcs,l:'Parcs amb dades',cl:''},
+  ];
+  document.getElementById('kpiRow').innerHTML = kpis.map(k=>`<div class="kpi ${k.cl}"><div class="num">${k.n}</div><div class="lbl">${k.l}</div></div>`).join('');
+}
+
+function renderBanner(){
+  const c = HISTORY[DATES[currentIdx]].catalunya, el = document.getElementById('banner');
+  const hasDif = c.diferencia!=null;
+  if((hasDif && c.diferencia<0) || c.sota_minims>0 || c.tancats>0){
+    el.className='banner';
+    if(hasDif && c.diferencia<0){
+      el.innerHTML = `El ${fmtDate(DATES[currentIdx])} falten ${Math.abs(c.diferencia)} dotacions${c.tancats>0?` i hi ha ${c.tancats} parc${c.tancats===1?'':'s'} tancat${c.tancats===1?'':'s'}`:''} a Catalunya`;
+    } else {
+      el.innerHTML = `El ${fmtDate(DATES[currentIdx])} hi ha ${c.sota_minims} parcs sota mínims${c.tancats>0?` i ${c.tancats} tancat${c.tancats===1?'':'s'}`:''} a Catalunya`;
+    }
+  } else { el.className='banner ok'; el.innerHTML = `El ${fmtDate(DATES[currentIdx])} la plantilla està equilibrada respecte als mínims`; }
+}
+
+function renderRegTable(){
+  const snap = HISTORY[DATES[currentIdx]];
+  document.getElementById('regDateLabel').textContent = fmtDate(DATES[currentIdx]);
+  let html = `<tr><th>Regió</th><th>Cobert</th><th>Falta 1</th><th>Falten 2</th><th>Crític 3+</th><th>Tancats</th></tr>`;
+  REGION_ORDER.forEach(rc=>{
+    const r = snap.regions[rc]; if(!r) return;
+    const cobert = r.sobre_minims + r.minims;
+    html += `<tr><td>${rc}<div style="font-size:9px;color:var(--grey);font-weight:400;">${REGION_NAMES[rc]}</div></td>`+
+      `<td class="${cobert>0?'cell-ok':'cell-zero'}">${cobert}</td>`+
+      `<td class="${r.inacceptable>0?'cell-warn':'cell-zero'}">${r.inacceptable}</td>`+
+      `<td class="${r.greu>0?'cell-bad':'cell-zero'}">${r.greu}</td>`+
+      `<td class="${r.critic>0?'cell-bad':'cell-zero'}">${r.critic}</td>`+
+      `<td class="${r.tancat>0?'cell-bad':'cell-zero'}">${r.tancat}</td></tr>`;
+  });
+  document.getElementById('regTable').innerHTML = html;
+}
+
+function renderChart(){
+  const labels = DATES.map(fmtDate);
+  const cats = DATES.map(d=>HISTORY[d].catalunya);
+  if(chart) chart.destroy();
+  chart = new Chart(document.getElementById('chartParcs').getContext('2d'),{
+    type:'line',
+    data:{labels,datasets:[
+      {label:'Parcs sota mínims',data:cats.map(c=>c.sota_minims),borderColor:'#c81d25',backgroundColor:'rgba(200,29,37,0.12)',borderWidth:2.5,tension:0.15,fill:true,pointBackgroundColor:'#f4c10f',pointRadius:4},
+      {label:'Parcs tancats',data:cats.map(c=>c.tancats),borderColor:'#f4c10f',backgroundColor:'rgba(244,193,15,0.08)',borderWidth:2.5,tension:0.15,fill:true,pointBackgroundColor:'#fff',pointRadius:4},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#f7f6f2',font:{size:11}}}},
+      scales:{x:{ticks:{color:'#8a8a86'},grid:{color:'#2b2b2b'}},y:{beginAtZero:true,ticks:{color:'#8a8a86',precision:0},grid:{color:'#2b2b2b'}}}}
+  });
+}
+
+function isoWeekBounds(dateStr){
+  const d = new Date(dateStr+'T12:00:00'), day=(d.getDay()+6)%7;
+  const mon = new Date(d); mon.setDate(d.getDate()-day);
+  const sun = new Date(mon); sun.setDate(mon.getDate()+6);
+  return [mon.toISOString().slice(0,10),sun.toISOString().slice(0,10)];
+}
+
+function renderShare(){
+  const d = DATES[currentIdx], c = HISTORY[d].catalunya;
+  let txt;
+  if(sharePeriod==='dia'){
+    const snap = HISTORY[d];
+    const worst = REGION_ORDER.map(rc=>({rc,def:(snap.regions[rc]?snap.regions[rc].inacceptable+snap.regions[rc].greu+snap.regions[rc].critic+snap.regions[rc].tancat:0)})).sort((a,b)=>b.def-a.def)[0];
+    txt = `🚒 COBERTURA BOMBERS CATALUNYA — ${fmtDate(d)}\n`+
+      `\n⚠️ ${c.sota_minims} parcs sota mínims`+
+      (c.tancats>0?`\n❌ ${c.tancats} parcs tancats`:'')+
+      `\n👥 ${c.diferencia} dotacions respecte als mínims`+
+      `\n\nRegió més afectada: ${REGION_NAMES[worst.rc]}.\n\n#BombersCatalunya`;
+  } else {
+    let range,label;
+    if(sharePeriod==='setmana'){ const [mo,su]=isoWeekBounds(d); range=DATES.filter(x=>x>=mo&&x<=su); label=`SETMANA ${fmtDate(mo)} – ${fmtDate(su)}`; }
+    else { const ym=d.slice(0,7); range=DATES.filter(x=>x.slice(0,7)===ym); label=`MES ${d.slice(5,7)}/${d.slice(0,4)}`; }
+    const days = range.map(x=>HISTORY[x].catalunya), n=days.length;
+    if(n<=1){ txt = `📊 RESUM ${label}\n\nEncara no hi ha prou dies amb dades en aquest període (${n}).\nEs completarà a mesura que s'afegeixin els dies.`; }
+    else {
+      const avgSota=(days.reduce((s,c)=>s+c.sota_minims,0)/n).toFixed(1);
+      const maxSota=Math.max(...days.map(c=>c.sota_minims));
+      const totTancats=days.reduce((s,c)=>s+c.tancats,0);
+      const difDays=days.filter(c=>c.diferencia!=null);
+      const avgDifTxt = difDays.length ? `\n👥 Mitjana de ${(difDays.reduce((s,c)=>s+c.diferencia,0)/difDays.length).toFixed(1)} dotacions` : '';
+      const pitjor=range[days.map(c=>c.sota_minims).indexOf(maxSota)];
+      txt = `📊 RESUM ${label}\n\n📅 ${n} dies amb dades\n⚠️ Mitjana de ${avgSota} parcs sota mínims/dia\n🔺 Pitjor dia: ${fmtDate(pitjor)} (${maxSota} parcs)`+
+        (totTancats>0?`\n❌ ${totTancats} tancaments acumulats`:'')+avgDifTxt+`\n\n#BombersCatalunya`;
+    }
+  }
+  document.getElementById('shareText').textContent = txt;
+}
+
+function renderAll(){
+  renderBanner(); renderKPIs(); renderRegTable(); renderParcMap(); renderChart(); renderShare();
+  document.getElementById('daySelect').value = DATES[currentIdx];
+}
+
+function initUI(){
+  const sel = document.getElementById('daySelect');
+  sel.innerHTML = DATES.map(d=>`<option value="${d}">${fmtDate(d)}</option>`).join('');
+  sel.value = DATES[currentIdx];
+  sel.addEventListener('change',()=>{ currentIdx=DATES.indexOf(sel.value); renderAll(); });
+  document.getElementById('prevDay').addEventListener('click',()=>{ if(currentIdx>0){currentIdx--;renderAll();} });
+  document.getElementById('nextDay').addEventListener('click',()=>{ if(currentIdx<DATES.length-1){currentIdx++;renderAll();} });
+  document.getElementById('copyShare').addEventListener('click',()=>{
+    navigator.clipboard.writeText(document.getElementById('shareText').textContent).then(()=>{
+      const b=document.getElementById('copyShare'); b.textContent='Copiat!'; setTimeout(()=>b.textContent='Copiar text',1500);
+    });
+  });
+  document.querySelectorAll('.period-btn').forEach(b=>b.addEventListener('click',()=>{
+    sharePeriod=b.dataset.period;
+    document.querySelectorAll('.period-btn').forEach(x=>x.classList.toggle('active',x.dataset.period===sharePeriod));
+    renderShare();
+  }));
+  if(DATES.length<=1){ document.getElementById('prevDay').style.display='none'; document.getElementById('nextDay').style.display='none'; }
+}
+
+loadData();
+
+// ---- Panell de Coordinació (càrrega manual) ----
+const PARC_LIST = [{"code":"03 BER","name":"Berga","region":"REC","min":5},{"code":"08 GUA","name":"Guardiola de B.","region":"REC","min":3},{"code":"15 PUIG","name":"Puig-reig","region":"REC","min":5},{"code":"19 SOLS","name":"Solsona","region":"REC","min":3},{"code":"04 CAF","name":"Calaf","region":"REC","min":3},{"code":"05 CAR","name":"Cardona","region":"REC","min":3},{"code":"10 MAN","name":"Manresa","region":"REC","min":8},{"code":"11 MOI","name":"Moià","region":"REC","min":3},{"code":"14 PRA","name":"Prats de Lluçanés","region":"REC","min":3},{"code":"20 TOR","name":"Torelló","region":"REC","min":3},{"code":"21 VIC","name":"Vic","region":"REC","min":6},{"code":"10 FIGU","name":"Figueres","region":"REG","min":6},{"code":"14 LLAN","name":"Llançà","region":"REG","min":4},{"code":"22 ROSE","name":"Roses","region":"REG","min":4},{"code":"26 TORR","name":"Torroella de Montgrí","region":"REG","min":3},{"code":"11 GIRO","name":"Girona","region":"REG","min":8},{"code":"17 OLOT","name":"Olot","region":"REG","min":5},{"code":"21 RIPO","name":"Ripoll","region":"REG","min":4},{"code":"03 BANY","name":"Banyoles","region":"REG","min":3},{"code":"15 LLOR","name":"Lloret de Mar","region":"REG","min":5},{"code":"16 MAÇA","name":"Maçanet","region":"REG","min":4},{"code":"25 SCFA","name":"Santa Coloma de Farners","region":"REG","min":4},{"code":"01 AMER","name":"Amer","region":"REG","min":3},{"code":"18 PALA","name":"Palafrugell","region":"REG","min":6},{"code":"28 VALL","name":"Vall d'Aro","region":"REG","min":4},{"code":"04 PERA","name":"La Pera","region":"REG","min":5},{"code":"08 CASS","name":"Cassà de la Selva","region":"REG","min":3},{"code":"GROS","name":"Barcelona (Gros)","region":"REMN","min":6},{"code":"13 RUB","name":"Rubí","region":"REMN","min":5},{"code":"14 SAB","name":"Sabadell","region":"REMN","min":8},{"code":"20 TER","name":"Terrassa","region":"REMN","min":8},{"code":"06 GRA","name":"Granollers","region":"REMN","min":8},{"code":"10 MOL","name":"Mollet","region":"REMN","min":5},{"code":"16 SCE","name":"Sant Celoni","region":"REMN","min":4},{"code":"02 BAD","name":"Badalona","region":"REMN","min":8},{"code":"18 SCG","name":"Santa Coloma de Gramanet","region":"REMN","min":4},{"code":"09 MAT","name":"Mataró","region":"REMN","min":8},{"code":"12 PIN","name":"Pineda","region":"REMN","min":5},{"code":"09 CERV","name":"Cervera","region":"REL","min":4},{"code":"19 LLEI","name":"Lleida","region":"REL","min":9},{"code":"20 MOLL","name":"Mollerussa","region":"REL","min":4},{"code":"31 TAR","name":"Tàrrega","region":"REL","min":5},{"code":"06 BALA","name":"Balaguer","region":"REL","min":5},{"code":"29 SEU","name":"La Seu d'Urgell","region":"REL","min":5},{"code":"25 PONT","name":"El Pont de Suert","region":"REL","min":4},{"code":"30 SORT","name":"Sort","region":"REL","min":5},{"code":"33 TREM","name":"Tremp","region":"REL","min":4},{"code":"04 COR","name":"Cornellà de Ll.","region":"REMS","min":5},{"code":"05 GAV","name":"Gavà","region":"REMS","min":6},{"code":"07 HOS","name":"L'Hospitalet de Ll.","region":"REMS","min":8},{"code":"12 PLL","name":"El Prat de Llobregat","region":"REMS","min":4},{"code":"13 SBOI","name":"Sant Boi de Ll.","region":"REMS","min":3},{"code":"15 SFE","name":"S. Feliu de Ll.","region":"REMS","min":6},{"code":"08 IGU","name":"Igualada","region":"REMS","min":5},{"code":"10 MAR","name":"Martorell","region":"REMS","min":6},{"code":"18 VIF","name":"Vilafranca del P.","region":"REMS","min":6},{"code":"19 VIL","name":"Vilanova i la Geltrú","region":"REMS","min":6},{"code":"05 MONT","name":"Montblanc","region":"RET","min":3},{"code":"13 VALS","name":"Valls","region":"RET","min":4},{"code":"12 TARR","name":"Tarragona","region":"RET","min":9},{"code":"14 VEND","name":"El Vendrell","region":"RET","min":6},{"code":"02 CAMB","name":"Cambrils","region":"RET","min":5},{"code":"04 FALS","name":"Falset","region":"RET","min":3},{"code":"05 HOSP","name":"L'Hospitalet de l'Infant","region":"RET","min":3},{"code":"08 REUS","name":"Reus","region":"RET","min":9},{"code":"22 ASCO","name":"Ascó","region":"RETE","min":3},{"code":"26 GAND","name":"Gandesa","region":"RETE","min":3},{"code":"28 MÓRA","name":"Móra d'Ebre","region":"RETE","min":5},{"code":"20 AMET","name":"L'Ametlla de Mar","region":"RETE","min":3},{"code":"21 AMPO","name":"Amposta","region":"RETE","min":4},{"code":"30 TORT","name":"Tortosa","region":"RETE","min":5},{"code":"31 ULLD","name":"Ulldecona","region":"RETE","min":4}];
+(function(){
+  const modal = document.getElementById('coordModal');
+  document.getElementById('coordBtn').addEventListener('click', ()=>{ modal.style.display='flex'; });
+  document.getElementById('coordClose').addEventListener('click', ()=>{ modal.style.display='none'; });
+  modal.addEventListener('click', e=>{ if(e.target===modal) modal.style.display='none'; });
+
+  document.getElementById('coLoginBtn').addEventListener('click', ()=>{
+    const u = document.getElementById('coUser').value.trim();
+    const p = document.getElementById('coPass').value;
+    if(u==='coordinacio' && p==='assemblea2026'){
+      document.getElementById('coordLogin').style.display='none';
+      document.getElementById('coordPanel').style.display='block';
+      buildParcInputs();
+    } else {
+      document.getElementById('coMsg').textContent='Usuari o contrasenya incorrectes.';
+    }
+  });
+
+  function buildParcInputs(){
+    const cont = document.getElementById('coParcInputs');
+    const REGN = {REC:'Centre',REG:'Girona',REMN:'Metropolitana Nord',REL:'Lleida',REMS:'Metropolitana Sud',RET:'Tarragona',RETE:"Terres de l'Ebre"};
+    let html=''; let lastReg='';
+    PARC_LIST.forEach((p,i)=>{
+      if(p.region!==lastReg){ html+=`<div style="font-size:10px;text-transform:uppercase;color:var(--yellow);font-weight:800;margin:8px 0 4px;">${REGN[p.region]} (${p.region})</div>`; lastReg=p.region; }
+      html+=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;">
+        <span style="flex:1;font-size:12px;">${p.name} <span style="color:var(--grey);">(mín ${p.min})</span></span>
+        <input type="number" data-code="${p.code}" data-min="${p.min}" min="0" style="width:60px;padding:5px;background:var(--black);border:1px solid var(--line);color:var(--white);border-radius:3px;font-size:12px;" placeholder="reals">
+      </div>`;
+    });
+    cont.innerHTML = html;
+  }
+
+  document.getElementById('coGenerate').addEventListener('click', ()=>{
+    const date = document.getElementById('coDate').value.trim();
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(date)){ alert('Posa una data vàlida (AAAA-MM-DD)'); return; }
+    const inputs = document.querySelectorAll('#coParcInputs input[data-code]');
+    const parcs=[]; let totMin=0,totReal=0,sota=0,tancats=0;
+    const regions={}; REGION_ORDER.forEach(rc=>regions[rc]={sobre_minims:0,minims:0,inacceptable:0,greu:0,critic:0,tancat:0});
+    inputs.forEach(inp=>{
+      const code=inp.dataset.code, min=parseInt(inp.dataset.min);
+      const val=inp.value.trim();
+      const real = val===''?null:parseInt(val);
+      const pinfo = PARC_LIST.find(x=>x.code===code);
+      const full = {code,name:pinfo.name,region:pinfo.region,min,real,lat:null,lon:null};
+      parcs.push(full);
+      if(real!=null){
+        totMin+=min; totReal+=real;
+        const rc=pinfo.region, falten=min-real;
+        if(real===0){ regions[rc].tancat++; tancats++; sota++; }
+        else if(falten<=0){ real>min?regions[rc].sobre_minims++:regions[rc].minims++; }
+        else { sota++; if(falten===1)regions[rc].inacceptable++; else if(falten===2)regions[rc].greu++; else regions[rc].critic++; }
+      }
+    });
+    const snapshot={date,parcs,regions,catalunya:{min_total:totMin,real_total:totReal,diferencia:totReal-totMin,sota_minims:sota,tancats,n_parcs:parcs.filter(p=>p.real!=null).length}};
+    const out=`  ${JSON.stringify(date)}: ${JSON.stringify(snapshot)}`;
+    document.getElementById('coJson').value = out;
+    document.getElementById('coOutput').style.display='block';
+  });
+
+  document.getElementById('coCopy').addEventListener('click', ()=>{
+    const ta=document.getElementById('coJson'); ta.select();
+    navigator.clipboard.writeText(ta.value).then(()=>{ const b=document.getElementById('coCopy'); b.textContent='Copiat!'; setTimeout(()=>b.textContent='Copiar',1500); });
+  });
+})();
+</script>
+</body>
+</html>
