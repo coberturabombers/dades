@@ -1,0 +1,10 @@
+# Fitxers temporals
+/tmp/
+*_tri_download.xlsx
+__pycache__/
+*.pyc
+.DS_Store
+
+# NO ignorem data/ perquè history.json ha d'anar al repositori
+# (és el que fa que Netlify vegi les dades actualitzades)
+

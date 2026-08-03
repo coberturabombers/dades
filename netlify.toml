@@ -1,0 +1,22 @@
+# Configuració de Netlify per al web de cobertura de bombers
+#
+# Netlify publica el contingut de la carpeta "site" i, a més, ha de poder
+# accedir a la carpeta "data" (on hi ha history.json). Per això publiquem
+# l'arrel del projecte i deixem que el web carregui ../data/history.json.
+
+[build]
+  publish = "."
+  command = ""     # no cal cap procés de build; és HTML estàtic
+
+# Redirigim l'arrel del domini cap al dashboard
+[[redirects]]
+  from = "/"
+  to = "/site/index.html"
+  status = 200
+
+# Evitem que es puguin descarregar fitxers que no siguin dades o web
+[[headers]]
+  for = "/data/*.json"
+  [headers.values]
+    Cache-Control = "public, max-age=300"
+    Access-Control-Allow-Origin = "*"
