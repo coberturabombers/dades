@@ -1,0 +1,55 @@
+name: Actualitza dades TRI cada dia
+
+# Aquest workflow s'executa automàticament CADA DIA a una hora fixa i:
+#  1. Descarrega la còpia NETA de l'Excel des del Google Drive de l'Assemblea
+#     (l'enllaç es guarda com a secret ENLLAC_TRI, així no és visible al codi)
+#  2. N'extreu les dades de cobertura amb scripts/parse_tri.py
+#  3. Desa la foto del dia a data/history.json i data/latest.json
+#  4. Fa commit dels canvis (Netlify detecta el commit i republica el web)
+#
+# TU NO HAS DE FER RES CADA DIA: el sistema consulta sol el fitxer del Drive.
+# L'únic que cal és que la còpia neta del Drive estigui actualitzada amb les dades
+# del dia (si el fitxer del Drive se sobreescriu, l'enllaç no canvia).
+
+on:
+  schedule:
+    # 08:10 UTC = 10:10 hora de Barcelona a l'estiu (CEST, UTC+2).
+    # A l'hivern (CET, UTC+1) seran les 09:10. Ajusta l'hora si cal.
+    - cron: "10 8 * * *"
+  workflow_dispatch:            # permet executar-lo manualment per provar
+
+permissions:
+  contents: write
+
+jobs:
+  actualitza:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descarrega el repositori
+        uses: actions/checkout@v4
+
+      - name: Prepara Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instal·la dependències
+        run: pip install openpyxl
+
+      - name: Descarrega i processa la còpia neta del Drive
+        env:
+          ENLLAC_TRI: ${{ secrets.ENLLAC_TRI }}
+        run: |
+          python scripts/parse_tri.py --url "$ENLLAC_TRI"
+
+      - name: Fes commit dels canvis
+        run: |
+          git config user.name "TRI Bot"
+          git config user.email "actions@github.com"
+          git add data/history.json data/latest.json
+          if git diff --staged --quiet; then
+            echo "Cap canvi de dades avui."
+          else
+            git commit -m "Dades TRI del dia $(date +%F)"
+            git push
+          fi
