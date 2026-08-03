@@ -1,0 +1,5 @@
+Aquesta carpeta és per a la CÀRREGA MANUAL (opcional), per si algun dia vols pujar
+un Excel a mà en comptes de fer servir el Drive automàtic.
+
+El flux normal és automàtic: el sistema llegeix la còpia neta des del Google Drive
+cada dia (mira PLA_PROVA_5_DIES.md). En aquest cas, aquesta carpeta pot quedar buida.
