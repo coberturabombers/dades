@@ -228,9 +228,28 @@ def build_snapshot(the_date, parcs):
 
 def download(url, dest):
     import urllib.request
-    opener = urllib.request.build_opener()
-    opener.addheaders = [("User-Agent", "Mozilla/5.0")]
-    data = opener.open(url).read()
+    import urllib.parse
+    import http.cookiejar
+    cj = http.cookiejar.CookieJar()
+    opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cj))
+    opener.addheaders = [("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)")]
+    resp = opener.open(url)
+    data = resp.read()
+    # Si el que rebem és HTML (pàgina de confirmació/login de Google), intentem
+    # seguir el formulari de confirmació de descàrrega.
+    head = data[:512].lstrip()[:15].lower()
+    if head.startswith(b"<!doctype html") or head.startswith(b"<html"):
+        text = data.decode("utf-8", "replace")
+        m_action = re.search(r'action="([^"]+)"', text)
+        confirm = re.search(r'name="confirm"\s+value="([^"]+)"', text)
+        uuid = re.search(r'name="uuid"\s+value="([^"]+)"', text)
+        if m_action and confirm:
+            params = {"confirm": confirm.group(1)}
+            if uuid:
+                params["uuid"] = uuid.group(1)
+            action = m_action.group(1).replace("&amp;", "&")
+            new_url = action + ("&" if "?" in action else "?") + urllib.parse.urlencode(params)
+            data = opener.open(new_url).read()
     with open(dest, "wb") as f:
         f.write(data)
 
