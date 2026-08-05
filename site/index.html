@@ -122,7 +122,7 @@ footer.foot b{color:var(--yellow);}
 
       <div class="section-title">Detall parc a parc</div>
       <div class="card">
-        <h3>Mapa de parcs · efectius mínims vs efectius disponibles</h3>
+        <h3>Mapa de parcs · mínim de torn vs reals a parc</h3>
         <div id="parcMap"></div>
         <div class="legend-inline">
           <span><i class="sw" style="background:#5fd08a"></i>Cobert</span>
@@ -172,15 +172,15 @@ function fmtDate(iso){ const [y,m,d]=iso.split('-'); return `${d}/${m}/${y}`; }
 function parcColor(f){ if(f<=0)return '#5fd08a'; if(f===1)return '#f4c10f'; if(f===2)return '#c81d25'; return '#7a0f14'; }
 
 async function loadData(){
-  try{
-    const res = await fetch('../data/history.json?t='+Date.now());
-    if(!res.ok) throw new Error('no data');
-    HISTORY = await res.json();
-  }catch(e){
-    // fallback: try same-folder data (for local testing)
-    try{ const r2 = await fetch('data/history.json?t='+Date.now()); HISTORY = await r2.json(); }
-    catch(e2){ document.getElementById('loading').textContent = 'No s\'han pogut carregar les dades.'; return; }
+  const paths = ['/data/history.json', '../data/history.json', 'data/history.json'];
+  let loaded = false;
+  for(const p of paths){
+    try{
+      const res = await fetch(p + '?t=' + Date.now());
+      if(res.ok){ HISTORY = await res.json(); loaded = true; break; }
+    }catch(e){ /* prova la següent ruta */ }
   }
+  if(!loaded){ document.getElementById('loading').textContent = 'No s\'han pogut carregar les dades.'; return; }
   DATES = Object.keys(HISTORY).sort();
   if(!DATES.length){ document.getElementById('loading').textContent = 'Encara no hi ha dades disponibles.'; return; }
   currentIdx = DATES.length-1;
@@ -208,7 +208,7 @@ function renderParcMap(){
     const banner = falten>0
       ? `<div style="margin-top:8px;padding:8px;background:repeating-linear-gradient(45deg,#c81d25 0 8px,#0a0a0a 8px 16px);color:#fff;border:2px solid #f4c10f;border-radius:3px;font-weight:900;font-size:11px;text-transform:uppercase;">Falten ${falten} dotaci${falten===1?'ó':'ons'} a ${p.name}</div>`
       : `<div style="margin-top:8px;padding:8px;background:#f4c10f;color:#0a0a0a;border-radius:3px;font-weight:900;font-size:11px;text-transform:uppercase;">Parc cobert</div>`;
-    m.bindPopup(`<div style="font-size:13px;"><div style="font-weight:900;font-size:15px;text-transform:uppercase;">${p.name}</div><div style="color:#8a8a86;font-size:11px;margin-bottom:6px;">${p.code} · ${p.region}</div><div style="display:flex;justify-content:space-between;"><span>Efectius mínims</span><b>${p.min}</b></div><div style="display:flex;justify-content:space-between;"><span>Efectius disponibles</span><b>${p.real}</b></div>${banner}</div>`);
+    m.bindPopup(`<div style="font-size:13px;"><div style="font-weight:900;font-size:15px;text-transform:uppercase;">${p.name}</div><div style="color:#8a8a86;font-size:11px;margin-bottom:6px;">${p.code} · ${p.region}</div><div style="display:flex;justify-content:space-between;"><span>Mínim de torn</span><b>${p.min}</b></div><div style="display:flex;justify-content:space-between;"><span>Reals a parc</span><b>${p.real}</b></div>${banner}</div>`);
     m.bindTooltip(`<b>${p.name}</b> · ${p.real}/${p.min}`,{direction:'top'});
     parcMarkers.push(m);
   });
