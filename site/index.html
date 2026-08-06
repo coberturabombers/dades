@@ -206,7 +206,7 @@ function renderParcMap(){
     const icon = L.divIcon({html:`<div style="width:26px;height:26px;border-radius:50%;background:${color};border:2.5px solid #0a0a0a;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:11px;color:${tc};">${label}</div>`,className:'',iconSize:[26,26],iconAnchor:[13,13]});
     const m = L.marker([p.lat,p.lon],{icon}).addTo(parcMap);
     const banner = falten>0
-      ? `<div style="margin-top:8px;padding:8px;background:repeating-linear-gradient(45deg,#c81d25 0 8px,#0a0a0a 8px 16px);color:#fff;border:2px solid #f4c10f;border-radius:3px;font-weight:900;font-size:11px;text-transform:uppercase;">Falten ${falten} dotaci${falten===1?'ó':'ons'} a ${p.name}</div>`
+      ? `<div style="margin-top:8px;padding:8px;background:repeating-linear-gradient(45deg,#c81d25 0 8px,#0a0a0a 8px 16px);color:#fff;border:2px solid #f4c10f;border-radius:3px;font-weight:900;font-size:11px;text-transform:uppercase;">Falten ${falten} bomber${falten===1?'':'s'} a ${p.name}</div>`
       : `<div style="margin-top:8px;padding:8px;background:#f4c10f;color:#0a0a0a;border-radius:3px;font-weight:900;font-size:11px;text-transform:uppercase;">Parc cobert</div>`;
     m.bindPopup(`<div style="font-size:13px;"><div style="font-weight:900;font-size:15px;text-transform:uppercase;">${p.name}</div><div style="color:#8a8a86;font-size:11px;margin-bottom:6px;">${p.code} · ${p.region}</div><div style="display:flex;justify-content:space-between;"><span>Mínim de torn</span><b>${p.min}</b></div><div style="display:flex;justify-content:space-between;"><span>Reals a parc</span><b>${p.real}</b></div>${banner}</div>`);
     m.bindTooltip(`<b>${p.name}</b> · ${p.real}/${p.min}`,{direction:'top'});
@@ -217,11 +217,11 @@ function renderParcMap(){
 
 function renderKPIs(){
   const c = HISTORY[DATES[currentIdx]].catalunya;
-  const dif = (c.diferencia==null) ? '—' : c.diferencia;
+  const falten = (c.dotacions_falten!=null) ? c.dotacions_falten : '—';
   const kpis = [
-    {n:c.sota_minims,l:'Parcs sota mínims',cl:'crit'},
-    {n:c.tancats,l:'Parcs tancats',cl:'closed'},
-    {n:dif,l:'Diferència de dotacions',cl:(c.diferencia!=null&&c.diferencia<0)?'crit':'warn'},
+    {n:c.sota_minims,l:'Parcs sota mínims',cl:'warn'},
+    {n:c.tancats,l:'Parcs tancats',cl:'crit'},
+    {n:falten,l:'Bombers que falten avui',cl:'crit'},
     {n:c.n_parcs,l:'Parcs amb dades',cl:''},
   ];
   document.getElementById('kpiRow').innerHTML = kpis.map(k=>`<div class="kpi ${k.cl}"><div class="num">${k.n}</div><div class="lbl">${k.l}</div></div>`).join('');
@@ -229,17 +229,18 @@ function renderKPIs(){
 
 function renderBanner(){
   const c = HISTORY[DATES[currentIdx]].catalunya, el = document.getElementById('banner');
-  const hasDif = c.diferencia!=null;
-  if((hasDif && c.diferencia<0) || c.sota_minims>0 || c.tancats>0){
+  const falten = c.dotacions_falten;
+  if((falten!=null && falten>0) || c.sota_minims>0 || c.tancats>0){
     el.className='banner';
-    if(hasDif && c.diferencia<0){
-      el.innerHTML = `El ${fmtDate(DATES[currentIdx])} falten ${Math.abs(c.diferencia)} dotacions${c.tancats>0?` i hi ha ${c.tancats} parc${c.tancats===1?'':'s'} tancat${c.tancats===1?'':'s'}`:''} a Catalunya`;
+    if(falten!=null && falten>0){
+      el.innerHTML = `El ${fmtDate(DATES[currentIdx])} falten ${falten} bombers a la guàrdia${c.tancats>0?` i hi ha ${c.tancats} parc${c.tancats===1?'':'s'} tancat${c.tancats===1?'':'s'}`:''} a Catalunya`;
     } else {
       el.innerHTML = `El ${fmtDate(DATES[currentIdx])} hi ha ${c.sota_minims} parcs sota mínims${c.tancats>0?` i ${c.tancats} tancat${c.tancats===1?'':'s'}`:''} a Catalunya`;
     }
   } else { el.className='banner ok'; el.innerHTML = `El ${fmtDate(DATES[currentIdx])} la plantilla està equilibrada respecte als mínims`; }
 }
 
+let expandedRegion = null;
 function renderRegTable(){
   const snap = HISTORY[DATES[currentIdx]];
   document.getElementById('regDateLabel').textContent = fmtDate(DATES[currentIdx]);
@@ -247,14 +248,44 @@ function renderRegTable(){
   REGION_ORDER.forEach(rc=>{
     const r = snap.regions[rc]; if(!r) return;
     const cobert = r.sobre_minims + r.minims;
-    html += `<tr><td>${rc}<div style="font-size:9px;color:var(--grey);font-weight:400;">${REGION_NAMES[rc]}</div></td>`+
+    const isOpen = expandedRegion===rc;
+    const arrow = isOpen ? '▼' : '▶';
+    html += `<tr class="reg-row" data-reg="${rc}" style="cursor:pointer;">`+
+      `<td>${arrow} ${rc}<div style="font-size:9px;color:var(--grey);font-weight:400;">${REGION_NAMES[rc]}</div></td>`+
       `<td class="${cobert>0?'cell-ok':'cell-zero'}">${cobert}</td>`+
       `<td class="${r.inacceptable>0?'cell-warn':'cell-zero'}">${r.inacceptable}</td>`+
       `<td class="${r.greu>0?'cell-bad':'cell-zero'}">${r.greu}</td>`+
       `<td class="${r.critic>0?'cell-bad':'cell-zero'}">${r.critic}</td>`+
       `<td class="${r.tancat>0?'cell-bad':'cell-zero'}">${r.tancat}</td></tr>`;
+    // fila de detall desplegada
+    if(isOpen){
+      const parcs = (snap.parcs||[]).filter(p=>p.region===rc);
+      if(parcs.length){
+        let detail = parcs.map(p=>{
+          if(p.real==null) return `<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #222;"><span>${p.name}</span><span style="color:var(--grey);">sense dades</span></div>`;
+          const falten = p.min-p.real;
+          let color='var(--green)', txt='cobert';
+          if(p.real===0){color='var(--red)';txt='TANCAT';}
+          else if(falten===1){color='var(--yellow)';txt='−1';}
+          else if(falten>=2){color='var(--red)';txt='−'+falten;}
+          else if(p.real>p.min){txt='+'+(p.real-p.min);}
+          return `<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #222;font-size:12px;"><span>${p.name}</span><span><b>${p.real}</b>/${p.min} <span style="color:${color};font-weight:700;">${txt}</span></span></div>`;
+        }).join('');
+        html += `<tr><td colspan="6" style="background:var(--black);padding:10px 14px;">${detail}</td></tr>`;
+      } else {
+        html += `<tr><td colspan="6" style="background:var(--black);padding:10px 14px;color:var(--grey);font-size:12px;">Aquest dia no té detall parc a parc disponible.</td></tr>`;
+      }
+    }
   });
   document.getElementById('regTable').innerHTML = html;
+  // events de clic
+  document.querySelectorAll('.reg-row').forEach(row=>{
+    row.addEventListener('click', ()=>{
+      const rc = row.dataset.reg;
+      expandedRegion = (expandedRegion===rc) ? null : rc;
+      renderRegTable();
+    });
+  });
 }
 
 function renderChart(){
@@ -264,8 +295,8 @@ function renderChart(){
   chart = new Chart(document.getElementById('chartParcs').getContext('2d'),{
     type:'line',
     data:{labels,datasets:[
-      {label:'Parcs sota mínims',data:cats.map(c=>c.sota_minims),borderColor:'#c81d25',backgroundColor:'rgba(200,29,37,0.12)',borderWidth:2.5,tension:0.15,fill:true,pointBackgroundColor:'#f4c10f',pointRadius:4},
-      {label:'Parcs tancats',data:cats.map(c=>c.tancats),borderColor:'#f4c10f',backgroundColor:'rgba(244,193,15,0.08)',borderWidth:2.5,tension:0.15,fill:true,pointBackgroundColor:'#fff',pointRadius:4},
+      {label:'Parcs sota mínims',data:cats.map(c=>c.sota_minims),borderColor:'#f4c10f',backgroundColor:'rgba(244,193,15,0.12)',borderWidth:2.5,tension:0.15,fill:true,pointBackgroundColor:'#fff',pointRadius:4},
+      {label:'Parcs tancats',data:cats.map(c=>c.tancats),borderColor:'#c81d25',backgroundColor:'rgba(200,29,37,0.12)',borderWidth:2.5,tension:0.15,fill:true,pointBackgroundColor:'#f4c10f',pointRadius:4},
     ]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#f7f6f2',font:{size:11}}}},
       scales:{x:{ticks:{color:'#8a8a86'},grid:{color:'#2b2b2b'}},y:{beginAtZero:true,ticks:{color:'#8a8a86',precision:0},grid:{color:'#2b2b2b'}}}}
@@ -288,7 +319,7 @@ function renderShare(){
     txt = `🚒 COBERTURA BOMBERS CATALUNYA — ${fmtDate(d)}\n`+
       `\n⚠️ ${c.sota_minims} parcs sota mínims`+
       (c.tancats>0?`\n❌ ${c.tancats} parcs tancats`:'')+
-      `\n👥 ${c.diferencia} dotacions respecte als mínims`+
+      `\n👥 ${c.dotacions_falten!=null?c.dotacions_falten:'—'} bombers que falten avui`+
       `\n\nRegió més afectada: ${REGION_NAMES[worst.rc]}.\n\n#BombersCatalunya`;
   } else {
     let range,label;
@@ -301,7 +332,7 @@ function renderShare(){
       const maxSota=Math.max(...days.map(c=>c.sota_minims));
       const totTancats=days.reduce((s,c)=>s+c.tancats,0);
       const difDays=days.filter(c=>c.diferencia!=null);
-      const avgDifTxt = difDays.length ? `\n👥 Mitjana de ${(difDays.reduce((s,c)=>s+c.diferencia,0)/difDays.length).toFixed(1)} dotacions` : '';
+      const falDays=days.filter(c=>c.dotacions_falten!=null); const avgDifTxt = falDays.length ? `\n👥 Mitjana de ${(falDays.reduce((s,c)=>s+c.dotacions_falten,0)/falDays.length).toFixed(1)} bombers que falten/dia` : '';
       const pitjor=range[days.map(c=>c.sota_minims).indexOf(maxSota)];
       txt = `📊 RESUM ${label}\n\n📅 ${n} dies amb dades\n⚠️ Mitjana de ${avgSota} parcs sota mínims/dia\n🔺 Pitjor dia: ${fmtDate(pitjor)} (${maxSota} parcs)`+
         (totTancats>0?`\n❌ ${totTancats} tancaments acumulats`:'')+avgDifTxt+`\n\n#BombersCatalunya`;
