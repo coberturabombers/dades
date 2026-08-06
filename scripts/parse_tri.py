@@ -37,10 +37,24 @@ REGION_NAMES = {
     "RETE": "Terres de l'Ebre",
 }
 
-# La columna que fem servir com a "efectius disponibles": A PARC (TOTAL - GOLF) = +4
-# (canvia a 3 si algun dia es vol fer servir "REALS A PARC")
-COL_OFFSET_EFECTIUS = 4
+# --- Selecció d'efectius --------------------------------------------------
+# Prioritat 1: REALS A PARC del document mestre (+3).
+# Prioritat 2: si REC/REG/REMN/REL surten buides, es busca REALS A PARC (columna H)
+#   al seu Google Sheet regional PÚBLIC.
+# Prioritat 3 (reserva): A PARC / TOTAL-GOLF (+4) del document mestre.
+COL_OFFSET_REALS = 3
+COL_OFFSET_TOTALGOLF = 4
 COL_OFFSET_MINIM = 2
+
+# Google Sheets regionals PÚBLICS (només aquests 4 són accessibles sense permís).
+# La columna H conté REALS A PARC. gid del full de dades = 255080715.
+# S'usen com a reserva quan el document mestre deixa la regió buida.
+PUBLIC_REGIONAL_SHEETS = {
+    "REC":  ("1q6ACcBeUgskxKs6WQFQQOU4iU8Sg0_b4_q3-MEnVbYk", 255080715),
+    "REG":  ("1YDdfSR2bj5pQBHpVhOOYnzVx2D0ysHME7RJEnundGl4", 255080715),
+    "REMN": ("1s2VuvKTbFMvtno4o1Wq3r95NTb49bK0Vwp1sHXz1574", 255080715),
+    "REL":  ("11TNgNeQTuJLkE4kD0LBqbBe55ZOl_6DH2W95N56GgZ0", 255080715),
+}
 
 KNOWN_NOCODE = {"GROS"}
 MIN_CHECKSUM = {"REC": 45, "REG": 71, "REMN": 69, "REL": 45,
@@ -156,13 +170,46 @@ def extract_date(rows):
     return None
 
 
+def fetch_public_reals(region):
+    """Baixa la columna H (REALS A PARC) del Google Sheet regional públic.
+    Retorna una llista de valors (int o None) en ordre, o None si falla."""
+    if region not in PUBLIC_REGIONAL_SHEETS:
+        return None
+    sheet_id, gid = PUBLIC_REGIONAL_SHEETS[region]
+    url = ("https://docs.google.com/spreadsheets/d/" + sheet_id +
+           "/export?format=csv&gid=" + str(gid))
+    try:
+        import urllib.request
+        opener = urllib.request.build_opener()
+        opener.addheaders = [("User-Agent", "Mozilla/5.0")]
+        data = opener.open(url, timeout=30).read().decode("utf-8", "replace")
+        rows = list(csv.reader(io.StringIO(data)))
+        # Columna H = índex 7 (0-based). Retornem tots els valors numèrics d'aquesta columna.
+        vals = []
+        for r in rows:
+            if len(r) > 7:
+                vals.append(to_int(r[7]))
+            else:
+                vals.append(None)
+        return vals
+    except Exception:
+        return None
+
+
 def parse_rows(rows):
     parcs = []
     warnings = []
+    n_reals = 0
+    n_public = 0
+    n_fallback = 0
     for region, base in REGION_COLS.items():
         col_min = base + COL_OFFSET_MINIM
-        col_ef = base + COL_OFFSET_EFECTIUS
+        col_reals = base + COL_OFFSET_REALS
+        col_golf = base + COL_OFFSET_TOTALGOLF
         region_min_sum = 0
+        # Primer, recollim els parcs de la regió del document mestre
+        region_parcs = []
+        need_public = False
         for row in rows:
             if base >= len(row):
                 continue
@@ -170,9 +217,30 @@ def parse_rows(rows):
             if not is_parc(code):
                 continue
             mn = to_int(row[col_min]) if col_min < len(row) else None
-            ef = to_int(row[col_ef]) if col_ef < len(row) else None
+            reals = to_int(row[col_reals]) if col_reals < len(row) else None
+            golf = to_int(row[col_golf]) if col_golf < len(row) else None
+            if reals is None:
+                need_public = True
+            region_parcs.append({"code": code, "min": mn, "reals": reals, "golf": golf})
             if mn is not None:
                 region_min_sum += mn
+        # Si falten REALS i la regió té Sheet públic, els busquem allà
+        public_vals = None
+        if need_public and region in PUBLIC_REGIONAL_SHEETS:
+            public_vals = fetch_public_reals(region)
+        # Assignem l'efectiu de cada parc segons prioritat
+        for idx, rp in enumerate(region_parcs):
+            code, mn, reals, golf = rp["code"], rp["min"], rp["reals"], rp["golf"]
+            if reals is not None:
+                ef = reals
+                n_reals += 1
+            elif public_vals is not None and idx < len(public_vals) and public_vals[idx] is not None:
+                ef = public_vals[idx]
+                n_public += 1
+            else:
+                ef = golf
+                if golf is not None:
+                    n_fallback += 1
             lat, lon = PARC_COORDS.get(code, (None, None))
             parcs.append({
                 "code": code, "name": PARC_NAMES.get(code, code),
@@ -183,6 +251,12 @@ def parse_rows(rows):
             warnings.append(
                 "ATENCIO: suma de minims de " + region + " = " + str(region_min_sum) +
                 ", s'esperava " + str(expected) + ".")
+    info = str(n_reals) + " REALS (mestre)"
+    if n_public:
+        info += ", " + str(n_public) + " REALS (Sheet públic)"
+    if n_fallback:
+        info += ", " + str(n_fallback) + " TOTAL-GOLF (reserva)"
+    warnings.append("INFO: " + info)
     return parcs, warnings
 
 
