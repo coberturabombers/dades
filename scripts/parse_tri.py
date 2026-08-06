@@ -190,6 +190,7 @@ def build_snapshot(the_date, parcs):
     regions = {rc: {"sobre_minims": 0, "minims": 0, "inacceptable": 0,
                     "greu": 0, "critic": 0, "tancat": 0} for rc in REGION_ORDER}
     total_min = total_real = sota_minims = tancats = 0
+    dotacions_falten = 0
     for p in parcs:
         rc = p["region"]
         mn, rl = p["min"], p["real"]
@@ -198,6 +199,8 @@ def build_snapshot(the_date, parcs):
         total_min += mn
         total_real += rl
         falten = mn - rl
+        if falten > 0:
+            dotacions_falten += falten
         if rl == 0:
             regions[rc]["tancat"] += 1
             tancats += 1
@@ -219,7 +222,9 @@ def build_snapshot(the_date, parcs):
         "date": the_date, "parcs": parcs, "regions": regions,
         "catalunya": {
             "min_total": total_min, "real_total": total_real,
-            "diferencia": total_real - total_min, "sota_minims": sota_minims,
+            "diferencia": total_real - total_min,
+            "dotacions_falten": dotacions_falten,
+            "sota_minims": sota_minims,
             "tancats": tancats,
             "n_parcs": len([p for p in parcs if p["real"] is not None]),
         },
