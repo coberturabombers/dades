@@ -6,67 +6,72 @@
 <title>Cobertura dels parcs de bombers · Assemblea Bombers de Catalunya</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.heat/0.2.0/leaflet-heat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.0/chart.umd.min.js"></script>
 <style>
 :root{
-  --black:#0a0a0a; --black-soft:#161616; --panel:#1c1c1c;
-  --red:#c81d25; --red-dark:#7a0f14; --yellow:#f4c10f; --white:#f7f6f2;
-  --grey:#8a8a86; --line:#2b2b2b; --green:#5fd08a;
+  --black:#0C0F12; --black-soft:#12161B; --panel:#171B21;
+  --red:#E4483D; --red-dark:#a52820; --yellow:#F2B838; --white:#F4F6F8;
+  --grey:#8B94A0; --line:#232A32; --green:#4ECB8C;
+  --accent:#E4483D;
 }
 *{box-sizing:border-box;}
-html,body{margin:0;padding:0;background:var(--black);color:var(--white);font-family:Arial,Helvetica,sans-serif;-webkit-font-smoothing:antialiased;}
+html,body{margin:0;padding:0;background:var(--black);color:var(--white);
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
+  -webkit-font-smoothing:antialiased;letter-spacing:-0.01em;}
 #app{min-height:100vh;display:flex;flex-direction:column;}
 header.topbar{
-  background:repeating-linear-gradient(135deg,var(--black) 0 18px,#000 18px 20px),var(--black);
-  border-bottom:4px solid var(--yellow);padding:12px 20px;display:flex;align-items:center;
+  background:var(--black);
+  border-bottom:1px solid var(--line);padding:16px 24px;display:flex;align-items:center;
   justify-content:space-between;gap:12px;flex-wrap:wrap;}
-.brand{display:flex;align-items:center;gap:12px;}
-.brand .mark{width:44px;height:44px;background:var(--red);border:3px solid var(--yellow);border-radius:4px;
-  display:flex;align-items:center;justify-content:center;font-weight:900;font-size:20px;color:var(--white);transform:rotate(-2deg);flex-shrink:0;}
-.brand h1{font-size:18px;letter-spacing:0.5px;margin:0;line-height:1.15;font-weight:800;text-transform:uppercase;}
-.brand h1 span{display:block;font-size:11px;font-weight:600;letter-spacing:2px;color:var(--yellow);margin-top:2px;}
+.brand{display:flex;align-items:center;gap:14px;}
+.brand .mark{width:42px;height:42px;background:var(--accent);border-radius:8px;
+  display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;color:var(--white);flex-shrink:0;}
+.brand h1{font-size:17px;letter-spacing:-0.02em;margin:0;line-height:1.2;font-weight:700;}
+.brand h1 span{display:block;font-size:11px;font-weight:500;letter-spacing:0.04em;color:var(--grey);margin-top:3px;text-transform:uppercase;}
 .date-nav{display:flex;align-items:center;gap:8px;}
-.date-nav select{padding:8px 12px;background:var(--panel);border:1px solid var(--line);color:var(--white);border-radius:3px;font-size:14px;font-weight:700;}
-.btn{border:2px solid var(--white);background:transparent;color:var(--white);padding:7px 12px;font-weight:800;font-size:12px;
-  letter-spacing:0.5px;text-transform:uppercase;cursor:pointer;border-radius:2px;transition:all .15s;}
-.btn:hover{background:var(--white);color:var(--black);}
-.btn.small{padding:5px 9px;font-size:11px;}
-.btn.yellow{background:var(--yellow);border-color:var(--yellow);color:var(--black);}
-main{flex:1;padding:20px;max-width:1200px;margin:0 auto;width:100%;}
-.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:22px;}
-.kpi{background:var(--panel);border:1px solid var(--line);border-radius:5px;padding:14px 16px;}
-.kpi .num{font-size:34px;font-weight:900;line-height:1;}
-.kpi .lbl{font-size:11px;text-transform:uppercase;letter-spacing:0.6px;color:var(--grey);font-weight:700;margin-top:6px;}
+.date-nav select{padding:8px 12px;background:var(--panel);border:1px solid var(--line);color:var(--white);border-radius:8px;font-size:14px;font-weight:600;}
+.btn{border:1px solid var(--line);background:var(--panel);color:var(--white);padding:8px 14px;font-weight:600;font-size:12px;
+  letter-spacing:0;cursor:pointer;border-radius:8px;transition:all .15s;}
+.btn:hover{background:var(--line);}
+.btn.small{padding:6px 10px;font-size:11px;}
+.btn.yellow{background:var(--accent);border-color:var(--accent);color:var(--white);}
+.btn.yellow:hover{opacity:0.9;background:var(--accent);}
+main{flex:1;padding:28px 24px;max-width:1180px;margin:0 auto;width:100%;}
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:28px;}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px 20px;}
+.kpi .num{font-size:38px;font-weight:800;line-height:1;letter-spacing:-0.03em;}
+.kpi .lbl{font-size:12px;letter-spacing:0;color:var(--grey);font-weight:500;margin-top:8px;}
 .kpi.crit .num{color:var(--red);} .kpi.warn .num{color:var(--yellow);} .kpi.closed .num{color:var(--white);}
-.section-title{font-size:13px;text-transform:uppercase;letter-spacing:1px;color:var(--yellow);font-weight:800;
-  margin:26px 0 12px;border-bottom:1px solid var(--line);padding-bottom:6px;}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+.section-title{font-size:12px;letter-spacing:0.08em;color:var(--grey);font-weight:600;text-transform:uppercase;
+  margin:32px 0 14px;padding-bottom:0;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:22px;}
 @media(max-width:880px){.grid2{grid-template-columns:1fr;}}
-.card{background:var(--panel);border:1px solid var(--line);border-radius:5px;padding:16px;margin-bottom:22px;}
-.card h3{margin:0 0 12px;font-size:13px;text-transform:uppercase;letter-spacing:0.5px;color:var(--white);font-weight:800;}
-#parcMap{height:520px;border-radius:5px;border:1px solid var(--line);background:#111;}
-.leaflet-popup-content-wrapper{background:var(--panel);color:var(--white);border-radius:4px;border:2px solid var(--yellow);}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:22px;}
+.card h3{margin:0 0 14px;font-size:15px;letter-spacing:-0.01em;color:var(--white);font-weight:700;}
+#parcMap{height:520px;border-radius:12px;border:1px solid var(--line);background:#0d1013;}
+.leaflet-popup-content-wrapper{background:var(--panel);color:var(--white);border-radius:10px;border:1px solid var(--line);}
 .leaflet-popup-tip{background:var(--panel);} .leaflet-container a.leaflet-popup-close-button{color:var(--white);}
-table.reg-table{width:100%;border-collapse:collapse;font-size:12.5px;}
-table.reg-table th{text-align:center;font-size:10px;text-transform:uppercase;color:var(--grey);padding:7px 5px;border-bottom:1px solid var(--line);}
-table.reg-table th:first-child,table.reg-table td:first-child{text-align:left;font-weight:800;}
-table.reg-table td{padding:7px 5px;border-bottom:1px solid var(--line);text-align:center;}
-.cell-bad{color:var(--red);font-weight:800;} .cell-warn{color:var(--yellow);font-weight:700;}
+table.reg-table{width:100%;border-collapse:collapse;font-size:13px;}
+table.reg-table th{text-align:center;font-size:10px;letter-spacing:0.04em;text-transform:uppercase;color:var(--grey);font-weight:600;padding:9px 5px;border-bottom:1px solid var(--line);}
+table.reg-table th:first-child,table.reg-table td:first-child{text-align:left;font-weight:700;}
+table.reg-table td{padding:9px 5px;border-bottom:1px solid var(--line);text-align:center;}
+.cell-bad{color:var(--red);font-weight:700;} .cell-warn{color:var(--yellow);font-weight:600;}
 .cell-ok{color:var(--green);} .cell-zero{color:var(--grey);}
-.banner{padding:14px 18px;border-radius:5px;font-weight:900;font-size:16px;line-height:1.4;text-transform:uppercase;
-  margin-bottom:22px;letter-spacing:0.3px;
-  background:repeating-linear-gradient(45deg,var(--red) 0 12px,var(--black) 12px 24px);color:var(--white);border:2px solid var(--yellow);}
-.banner.ok{background:var(--yellow);color:var(--black);border-color:var(--black);}
-footer.foot{border-top:1px solid var(--line);padding:14px 20px;font-size:11px;color:var(--grey);text-align:center;background:var(--black-soft);}
-footer.foot b{color:var(--yellow);}
-.legend-inline{display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--grey);margin-top:10px;}
-.legend-inline span{display:flex;align-items:center;gap:5px;}
-.legend-inline .sw{width:12px;height:12px;border-radius:50%;display:inline-block;}
-.note{font-size:11.5px;color:var(--grey);line-height:1.5;margin-top:8px;}
+.banner{padding:18px 22px;border-radius:14px;font-weight:700;font-size:17px;line-height:1.4;
+  margin-bottom:26px;letter-spacing:-0.01em;
+  background:var(--panel);color:var(--white);border:1px solid var(--line);border-left:4px solid var(--accent);}
+.banner.ok{background:var(--panel);color:var(--white);border-left:4px solid var(--green);}
+footer.foot{border-top:1px solid var(--line);padding:18px 24px;font-size:12px;color:var(--grey);text-align:center;background:var(--black);}
+footer.foot b{color:var(--white);font-weight:600;}
+.legend-inline{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--grey);margin-top:12px;}
+.legend-inline span{display:flex;align-items:center;gap:6px;}
+.legend-inline .sw{width:11px;height:11px;border-radius:50%;display:inline-block;}
+.note{font-size:12px;color:var(--grey);line-height:1.6;margin-top:10px;}
 .chart-wrap{position:relative;height:300px;}
-.period-btn.active{background:var(--yellow);border-color:var(--yellow);color:var(--black);}
+.period-btn.active{background:var(--accent);border-color:var(--accent);color:var(--white);}
 #loading{text-align:center;padding:60px 20px;color:var(--grey);}
-#shareText{background:var(--black);border:1px solid var(--line);border-radius:4px;padding:14px;font-size:13px;line-height:1.6;white-space:pre-wrap;}
+#shareText{background:var(--black);border:1px solid var(--line);border-radius:10px;padding:16px;font-size:13px;line-height:1.6;white-space:pre-wrap;}
 </style>
 </head>
 <body>
@@ -120,15 +125,27 @@ footer.foot b{color:var(--yellow);}
       <div id="banner"></div>
       <div class="kpi-row" id="kpiRow"></div>
 
+      <div class="section-title">Pitjor dia registrat</div>
+      <div class="kpi-row" id="worstRow"></div>
+
       <div class="section-title">Detall parc a parc</div>
       <div class="card">
-        <h3>Mapa de parcs · mínim de torn vs reals a parc</h3>
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
+          <h3 style="margin:0;">Mapa de parcs · mínim de torn vs reals a parc</h3>
+          <div style="display:flex;gap:6px;">
+            <button class="btn small period-btn active" id="viewNormal">Dia</button>
+            <button class="btn small period-btn" id="viewHeat">Mapa de calor</button>
+          </div>
+        </div>
         <div id="parcMap"></div>
-        <div class="legend-inline">
-          <span><i class="sw" style="background:#5fd08a"></i>Cobert</span>
-          <span><i class="sw" style="background:#f4c10f"></i>Falta 1</span>
-          <span><i class="sw" style="background:#c81d25"></i>Falten 2</span>
-          <span><i class="sw" style="background:#7a0f14;border:1px solid var(--yellow)"></i>Falten 3+ / tancat</span>
+        <div class="legend-inline" id="legendNormal">
+          <span><i class="sw" style="background:#4ECB8C"></i>Cobert</span>
+          <span><i class="sw" style="background:#F2B838"></i>Falta 1</span>
+          <span><i class="sw" style="background:#E4483D"></i>Falten 2</span>
+          <span><i class="sw" style="background:#a52820;border:1px solid var(--yellow)"></i>Falten 3+ / tancat</span>
+        </div>
+        <div class="legend-inline" id="legendHeat" style="display:none;">
+          <span>Zones acumulades: com més intens el color, més dies han estat els parcs d'aquella zona sota mínims (tot l'històric).</span>
         </div>
         <div class="note" id="parcMapNote"></div>
       </div>
@@ -143,6 +160,9 @@ footer.foot b{color:var(--yellow);}
         <div class="chart-wrap"><canvas id="chartParcs"></canvas></div>
         <div class="note">Evolució dels parcs sota mínims i tancats. Es va omplint cada dia automàticament.</div>
       </div>
+
+      <div class="section-title">Parcs més afectats — dies sota mínims (històric)</div>
+      <div class="card" id="topParcsCard"></div>
 
       <div class="section-title">Compartir</div>
       <div class="card">
@@ -169,7 +189,7 @@ const REGION_NAMES = {REC:'Centre',REG:'Girona',REMN:'Metropolitana Nord',REL:'L
 let HISTORY = {}, DATES = [], currentIdx = 0, parcMap, parcMarkers = [], chart, sharePeriod = 'dia';
 
 function fmtDate(iso){ const [y,m,d]=iso.split('-'); return `${d}/${m}/${y}`; }
-function parcColor(f){ if(f<=0)return '#5fd08a'; if(f===1)return '#f4c10f'; if(f===2)return '#c81d25'; return '#7a0f14'; }
+function parcColor(f){ if(f<=0)return '#4ECB8C'; if(f===1)return '#F2B838'; if(f===2)return '#E4483D'; return '#a52820'; }
 
 async function loadData(){
   const paths = ['/data/history.json', '../data/history.json', 'data/history.json'];
@@ -190,24 +210,79 @@ async function loadData(){
   initMap(); initUI(); renderAll();
 }
 
+let tileLight=null, tileDark=null;
 function initMap(){
   parcMap = L.map('parcMap',{zoomControl:true,scrollWheelZoom:false}).setView([41.7,1.7],8);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap'}).addTo(parcMap);
+  tileLight = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap &copy; CARTO'});
+  tileDark = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap &copy; CARTO'});
+  tileLight.addTo(parcMap);  // per defecte, vista Dia = fons clar
+  document.getElementById('viewNormal').addEventListener('click',()=>setMapView('normal'));
+  document.getElementById('viewHeat').addEventListener('click',()=>setMapView('heat'));
+}
+
+let mapView='normal', heatLayer=null;
+function setMapView(v){
+  mapView=v;
+  document.getElementById('viewNormal').classList.toggle('active',v==='normal');
+  document.getElementById('viewHeat').classList.toggle('active',v==='heat');
+  document.getElementById('legendNormal').style.display = v==='normal'?'flex':'none';
+  document.getElementById('legendHeat').style.display = v==='heat'?'flex':'none';
+  // canviar el fons segons la vista
+  if(v==='heat'){
+    if(parcMap.hasLayer(tileLight)) parcMap.removeLayer(tileLight);
+    if(!parcMap.hasLayer(tileDark)) tileDark.addTo(parcMap);
+  } else {
+    if(parcMap.hasLayer(tileDark)) parcMap.removeLayer(tileDark);
+    if(!parcMap.hasLayer(tileLight)) tileLight.addTo(parcMap);
+  }
+  renderParcMap();
+}
+
+function buildHeatData(){
+  // Acumula, per cada parc, quants dies ha estat sota mínims a tot l'històric.
+  const acc = {};
+  Object.values(HISTORY).forEach(snap=>{
+    (snap.parcs||[]).forEach(p=>{
+      if(p.lat==null||p.lon==null||p.real==null) return;
+      if(p.real < p.min){
+        const k=p.code;
+        if(!acc[k]) acc[k]={lat:p.lat,lon:p.lon,dies:0,name:p.name};
+        acc[k].dies++;
+      }
+    });
+  });
+  const arr = Object.values(acc);
+  const maxDies = Math.max(1, ...arr.map(a=>a.dies));
+  // format per leaflet.heat: [lat, lon, intensitat 0-1]
+  return {points: arr.map(a=>[a.lat,a.lon, a.dies/maxDies]), maxDies, count: arr.length};
 }
 
 function renderParcMap(){
   parcMarkers.forEach(m=>parcMap.removeLayer(m)); parcMarkers=[];
+  if(heatLayer){ parcMap.removeLayer(heatLayer); heatLayer=null; }
+
+  if(mapView==='heat'){
+    const hd = buildHeatData();
+    heatLayer = L.heatLayer(hd.points,{
+      radius:35, blur:28, maxZoom:10, max:1.0,
+      gradient:{0.0:'#2b6cb0',0.35:'#F2B838',0.65:'#E4483D',1.0:'#7a0f14'}
+    }).addTo(parcMap);
+    document.getElementById('parcMapNote').textContent =
+      `Mapa de calor acumulat de ${Object.keys(HISTORY).length} dies. ${hd.count} parcs han estat sota mínims algun dia; el més afectat, fins a ${hd.maxDies} dies. Com més intens el color, més dies sota mínims en aquella zona.`;
+    return;
+  }
+
   const snap = HISTORY[DATES[currentIdx]];
   (snap.parcs||[]).forEach(p=>{
     if(p.lat==null||p.lon==null||p.real==null) return;
     const falten = Math.max(0,p.min-p.real), exc = Math.max(0,p.real-p.min);
     const color = parcColor(falten), label = falten>0?'−'+falten:(exc>0?'+'+exc:'0');
-    const tc = falten<=1?'#0a0a0a':'#fff';
-    const icon = L.divIcon({html:`<div style="width:26px;height:26px;border-radius:50%;background:${color};border:2.5px solid #0a0a0a;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:11px;color:${tc};">${label}</div>`,className:'',iconSize:[26,26],iconAnchor:[13,13]});
+    const tc = falten<=1?'#0C0F12':'#fff';
+    const icon = L.divIcon({html:`<div style="width:26px;height:26px;border-radius:50%;background:${color};border:2.5px solid #0C0F12;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:11px;color:${tc};">${label}</div>`,className:'',iconSize:[26,26],iconAnchor:[13,13]});
     const m = L.marker([p.lat,p.lon],{icon}).addTo(parcMap);
     const banner = falten>0
-      ? `<div style="margin-top:8px;padding:8px;background:repeating-linear-gradient(45deg,#c81d25 0 8px,#0a0a0a 8px 16px);color:#fff;border:2px solid #f4c10f;border-radius:3px;font-weight:900;font-size:11px;text-transform:uppercase;">Falten ${falten} bomber${falten===1?'':'s'} a ${p.name}</div>`
-      : `<div style="margin-top:8px;padding:8px;background:#f4c10f;color:#0a0a0a;border-radius:3px;font-weight:900;font-size:11px;text-transform:uppercase;">Parc cobert</div>`;
+      ? `<div style="margin-top:8px;padding:8px;background:#E4483D;color:#fff;border-radius:8px;font-weight:600;font-size:12px;">Falten ${falten} bomber${falten===1?'':'s'} a ${p.name}</div>`
+      : `<div style="margin-top:8px;padding:8px;background:#4ECB8C;color:#0C0F12;border-radius:8px;font-weight:600;font-size:12px;">Parc cobert</div>`;
     m.bindPopup(`<div style="font-size:13px;"><div style="font-weight:900;font-size:15px;text-transform:uppercase;">${p.name}</div><div style="color:#8a8a86;font-size:11px;margin-bottom:6px;">${p.code} · ${p.region}</div><div style="display:flex;justify-content:space-between;"><span>Mínim de torn</span><b>${p.min}</b></div><div style="display:flex;justify-content:space-between;"><span>Reals a parc</span><b>${p.real}</b></div>${banner}</div>`);
     m.bindTooltip(`<b>${p.name}</b> · ${p.real}/${p.min}`,{direction:'top'});
     parcMarkers.push(m);
@@ -295,8 +370,8 @@ function renderChart(){
   chart = new Chart(document.getElementById('chartParcs').getContext('2d'),{
     type:'line',
     data:{labels,datasets:[
-      {label:'Parcs sota mínims',data:cats.map(c=>c.sota_minims),borderColor:'#f4c10f',backgroundColor:'rgba(244,193,15,0.12)',borderWidth:2.5,tension:0.15,fill:true,pointBackgroundColor:'#fff',pointRadius:4},
-      {label:'Parcs tancats',data:cats.map(c=>c.tancats),borderColor:'#c81d25',backgroundColor:'rgba(200,29,37,0.12)',borderWidth:2.5,tension:0.15,fill:true,pointBackgroundColor:'#f4c10f',pointRadius:4},
+      {label:'Parcs sota mínims',data:cats.map(c=>c.sota_minims),borderColor:'#F2B838',backgroundColor:'rgba(242,184,56,0.12)',borderWidth:2.5,tension:0.15,fill:true,pointBackgroundColor:'#fff',pointRadius:4},
+      {label:'Parcs tancats',data:cats.map(c=>c.tancats),borderColor:'#E4483D',backgroundColor:'rgba(228,72,61,0.12)',borderWidth:2.5,tension:0.15,fill:true,pointBackgroundColor:'#F2B838',pointRadius:4},
     ]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#f7f6f2',font:{size:11}}}},
       scales:{x:{ticks:{color:'#8a8a86'},grid:{color:'#2b2b2b'}},y:{beginAtZero:true,ticks:{color:'#8a8a86',precision:0},grid:{color:'#2b2b2b'}}}}
@@ -341,8 +416,50 @@ function renderShare(){
   document.getElementById('shareText').textContent = txt;
 }
 
+function renderWorst(){
+  const entries = Object.entries(HISTORY)
+    .filter(([d,s])=>s.catalunya.dotacions_falten!=null)
+    .map(([d,s])=>({date:d, falten:s.catalunya.dotacions_falten, tancats:s.catalunya.tancats, sota:s.catalunya.sota_minims}));
+  if(!entries.length){ document.getElementById('worstRow').innerHTML=''; return; }
+  const historic = entries.reduce((a,b)=>b.falten>a.falten?b:a);
+  document.getElementById('worstRow').innerHTML =
+    `<div class="kpi crit" style="grid-column:1/-1;"><div class="num">${historic.falten}</div><div class="lbl">Bombers que van faltar el pitjor dia · <span style="color:var(--white);font-weight:600;">${fmtDate(historic.date)}</span>${historic.tancats>0?` · ${historic.tancats} parcs tancats`:''} · ${historic.sota} parcs sota mínims</div></div>`;
+}
+
+function renderTopParcs(){
+  const acc = {};
+  Object.values(HISTORY).forEach(snap=>{
+    (snap.parcs||[]).forEach(p=>{
+      if(p.real==null) return;
+      if(p.real < p.min){
+        if(!acc[p.code]) acc[p.code]={name:p.name,region:p.region,dies:0,tancat:0};
+        acc[p.code].dies++;
+        if(p.real===0) acc[p.code].tancat++;
+      }
+    });
+  });
+  const arr = Object.values(acc).sort((a,b)=>b.dies-a.dies).slice(0,10);
+  const totalDies = Object.values(HISTORY).filter(s=>s.parcs&&s.parcs.length).length;
+  if(!arr.length){ document.getElementById('topParcsCard').innerHTML='<div class="note">Encara no hi ha prou dades amb detall parc a parc.</div>'; return; }
+  const maxDies = arr[0].dies;
+  let html = `<div style="font-size:12px;color:var(--grey);margin-bottom:12px;">Sobre ${totalDies} dies amb detall registrat</div>`;
+  arr.forEach(p=>{
+    const pct = Math.round(p.dies/maxDies*100);
+    html += `<div style="margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:3px;">
+        <span style="font-weight:600;">${p.name} <span style="color:var(--grey);font-weight:400;font-size:11px;">${p.region}</span></span>
+        <span style="font-weight:700;">${p.dies} dies${p.tancat>0?` <span style="color:var(--red);">· ${p.tancat} tancat</span>`:''}</span>
+      </div>
+      <div style="height:7px;background:var(--line);border-radius:4px;overflow:hidden;">
+        <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,#F2B838,#E4483D);border-radius:4px;"></div>
+      </div>
+    </div>`;
+  });
+  document.getElementById('topParcsCard').innerHTML = html;
+}
+
 function renderAll(){
-  renderBanner(); renderKPIs(); renderRegTable(); renderParcMap(); renderChart(); renderShare();
+  renderBanner(); renderKPIs(); renderWorst(); renderTopParcs(); renderRegTable(); renderParcMap(); renderChart(); renderShare();
   document.getElementById('daySelect').value = DATES[currentIdx];
 }
 
