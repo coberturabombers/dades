@@ -1,22 +1,17 @@
-name: Actualitza dades TRI cada dia
+name: Actualitza dades TRI
 
-# Aquest workflow s'executa automàticament CADA DIA a una hora fixa i:
-#  1. Descarrega la còpia NETA de l'Excel des del Google Drive de l'Assemblea
-#     (l'enllaç es guarda com a secret ENLLAC_TRI, així no és visible al codi)
-#  2. N'extreu les dades de cobertura amb scripts/parse_tri.py
-#  3. Desa la foto del dia a data/history.json i data/latest.json
-#  4. Fa commit dels canvis (Netlify detecta el commit i republica el web)
-#
-# TU NO HAS DE FER RES CADA DIA: el sistema consulta sol el fitxer del Drive.
-# L'únic que cal és que la còpia neta del Drive estigui actualitzada amb les dades
-# del dia (si el fitxer del Drive se sobreescriu, l'enllaç no canvia).
+# Captura la PREVISIO DEL MATI del document mestre.
+# La previsio esta disponible a partir de ~9:01 i NO es modifica fins a les 15:00.
+# Fem la foto ben d'hora al mati, amb marge de sobres abans de les 15:00,
+# perque encara que GitHub es retardi 1-2h (cosa normal), no arribi mai a les 15:00.
+# Diversos intents: si un falla, els altres ho cobreixen. Funciona sol setmanes.
 
 on:
   schedule:
-    # 08:10 UTC = 10:10 hora de Barcelona a l'estiu (CEST, UTC+2).
-    # A l'hivern (CET, UTC+1) seran les 09:10. Ajusta l'hora si cal.
-    - cron: "10 8 * * *"
-  workflow_dispatch:            # permet executar-lo manualment per provar
+    - cron: "15 7 * * *"    # ~09:15 estiu / 08:15 hivern
+    - cron: "0 8 * * *"     # ~10:00 estiu / 09:00 hivern (reintent)
+    - cron: "0 9 * * *"     # ~11:00 estiu / 10:00 hivern (ultim reintent; marge fins les 15:00)
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -33,10 +28,10 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Instal·la dependències
+      - name: Instal.la dependencies
         run: pip install openpyxl
 
-      - name: Descarrega i processa la còpia neta del Drive
+      - name: Descarrega i processa la copia del Drive
         env:
           ENLLAC_TRI: ${{ secrets.ENLLAC_TRI }}
         run: |
@@ -48,7 +43,7 @@ jobs:
           git config user.email "actions@github.com"
           git add data/history.json data/latest.json
           if git diff --staged --quiet; then
-            echo "Cap canvi de dades avui."
+            echo "Cap canvi de dades (el document encara no te la previsio nova o ja s'havia desat avui)."
           else
             git commit -m "Dades TRI del dia $(date +%F)"
             git push
