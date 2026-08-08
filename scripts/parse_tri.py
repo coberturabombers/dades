@@ -61,14 +61,14 @@ MIN_CHECKSUM = {"REC": 45, "REG": 71, "REMN": 69, "REL": 45,
                 "REMS": 55, "RET": 42, "RETE": 27}
 
 PARC_COORDS = {
-    "03 BER": (42.104, 1.845), "08 GUA": (42.203, 1.857), "15 PUIG": (41.974, 1.881),
+    "03 BER": (42.104, 1.845), "08 GUA": (42.203, 1.857), "15 PUIG": (42.431, 1.928),
     "19 SOLS": (41.995, 1.517), "04 CAF": (41.734, 1.512), "05 CAR": (41.913, 1.681),
     "10 MAN": (41.728, 1.827), "11 MOI": (41.812, 2.096), "14 PRA": (42.010, 2.032),
     "20 TOR": (42.049, 2.259), "21 VIC": (41.930, 2.254),
     "10 FIGU": (42.267, 2.961), "14 LLAN": (42.363, 3.152), "22 ROSE": (42.262, 3.176),
     "26 TORR": (42.043, 3.127), "11 GIRO": (41.983, 2.824), "17 OLOT": (42.181, 2.489),
     "21 RIPO": (42.201, 2.190), "03 BANY": (42.119, 2.767), "15 LLOR": (41.700, 2.845),
-    "16 MACA": (41.777, 2.734), "25 SCFA": (41.860, 2.669), "01 AMER": (41.968, 2.601),
+    "16 MACA": (41.777, 2.734), "16 MAÇA": (41.777, 2.734), "25 SCFA": (41.860, 2.669), "01 AMER": (41.968, 2.601),
     "18 PALA": (41.918, 3.163), "28 VALL": (41.818, 3.033), "04 PERA": (41.981, 2.965),
     "08 CASS": (41.885, 2.874),
     "GROS": (41.386, 2.170), "13 RUB": (41.493, 2.033), "14 SAB": (41.548, 2.107),
@@ -85,19 +85,19 @@ PARC_COORDS = {
     "05 MONT": (41.375, 1.161), "13 VALS": (41.287, 1.249), "12 TARR": (41.119, 1.245),
     "14 VEND": (41.220, 1.535), "02 CAMB": (41.067, 1.058), "04 FALS": (41.145, 0.821),
     "05 HOSP": (40.995, 0.938), "08 REUS": (41.156, 1.107),
-    "22 ASCO": (41.183, 0.564), "26 GAND": (41.053, 0.437), "28 MORA": (41.093, 0.643),
+    "22 ASCO": (41.183, 0.564), "26 GAND": (41.053, 0.437), "28 MORA": (41.093, 0.643), "28 MÓRA": (41.093, 0.643),
     "20 AMET": (40.884, 0.802), "21 AMPO": (40.708, 0.581), "30 TORT": (40.812, 0.521),
     "31 ULLD": (40.596, 0.451),
 }
 
 PARC_NAMES = {
-    "03 BER": "Berga", "08 GUA": "Guardiola de B.", "15 PUIG": "Puig-reig",
+    "03 BER": "Berga", "08 GUA": "Guardiola de B.", "15 PUIG": "Puigcerdà",
     "19 SOLS": "Solsona", "04 CAF": "Calaf", "05 CAR": "Cardona", "10 MAN": "Manresa",
     "11 MOI": "Moia", "14 PRA": "Prats de Llucanes", "20 TOR": "Torello", "21 VIC": "Vic",
     "10 FIGU": "Figueres", "14 LLAN": "Llanca", "22 ROSE": "Roses",
     "26 TORR": "Torroella de Montgri", "11 GIRO": "Girona", "17 OLOT": "Olot",
     "21 RIPO": "Ripoll", "03 BANY": "Banyoles", "15 LLOR": "Lloret de Mar",
-    "16 MACA": "Macanet", "25 SCFA": "Santa Coloma de Farners", "01 AMER": "Amer",
+    "16 MACA": "Maçanet de la Selva", "16 MAÇA": "Maçanet de la Selva", "25 SCFA": "Santa Coloma de Farners", "01 AMER": "Amer",
     "18 PALA": "Palafrugell", "28 VALL": "Vall d'Aro", "04 PERA": "La Pera",
     "08 CASS": "Cassa de la Selva",
     "GROS": "Barcelona (Gros)", "13 RUB": "Rubi", "14 SAB": "Sabadell",
@@ -114,7 +114,7 @@ PARC_NAMES = {
     "05 MONT": "Montblanc", "13 VALS": "Valls", "12 TARR": "Tarragona",
     "14 VEND": "El Vendrell", "02 CAMB": "Cambrils", "04 FALS": "Falset",
     "05 HOSP": "L'Hospitalet de l'Infant", "08 REUS": "Reus",
-    "22 ASCO": "Asco", "26 GAND": "Gandesa", "28 MORA": "Mora d'Ebre",
+    "22 ASCO": "Asco", "26 GAND": "Gandesa", "28 MORA": "Móra d'Ebre", "28 MÓRA": "Móra d'Ebre",
     "20 AMET": "L'Ametlla de Mar", "21 AMPO": "Amposta", "30 TORT": "Tortosa",
     "31 ULLD": "Ulldecona",
 }
@@ -242,9 +242,16 @@ def parse_rows(rows):
                 if golf is not None:
                     n_fallback += 1
             lat, lon = PARC_COORDS.get(code, (None, None))
+            # Mobilitat: entren = TOTAL-GOLF (dotació a les 7am), queden = REALS A PARC
+            entren = golf
+            queden = reals if reals is not None else (public_vals[idx] if (public_vals is not None and idx < len(public_vals)) else None)
+            mobilitat = None
+            if entren is not None and queden is not None:
+                mobilitat = queden - entren  # negatiu = han marxat, positiu = han rebut
             parcs.append({
                 "code": code, "name": PARC_NAMES.get(code, code),
                 "region": region, "min": mn, "real": ef, "lat": lat, "lon": lon,
+                "entren": entren, "queden": queden, "mobilitat": mobilitat,
             })
         expected = MIN_CHECKSUM.get(region)
         if expected is not None and region_min_sum != expected:
@@ -292,6 +299,21 @@ def build_snapshot(the_date, parcs):
                 regions[rc]["greu"] += 1
             else:
                 regions[rc]["critic"] += 1
+    # Estat INICIAL (a les 7h, amb els que entren = TOTAL-GOLF) vs FINAL (amb REALS)
+    sota_inici = 0
+    sobre_inici = 0
+    desplacats = 0
+    for p in parcs:
+        entren = p.get("entren")
+        mob = p.get("mobilitat")
+        mn = p["min"]
+        if entren is not None and mn is not None:
+            if entren < mn:
+                sota_inici += 1
+            elif entren > mn:
+                sobre_inici += 1
+        if mob is not None and mob < 0:
+            desplacats += -mob
     return {
         "date": the_date, "parcs": parcs, "regions": regions,
         "catalunya": {
@@ -300,6 +322,9 @@ def build_snapshot(the_date, parcs):
             "dotacions_falten": dotacions_falten,
             "sota_minims": sota_minims,
             "tancats": tancats,
+            "sota_inici": sota_inici,
+            "sobre_inici": sobre_inici,
+            "desplacats": desplacats,
             "n_parcs": len([p for p in parcs if p["real"] is not None]),
         },
     }
