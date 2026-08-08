@@ -291,7 +291,8 @@ function renderParcMap(){
 }
 
 function renderKPIs(){
-  const c = HISTORY[DATES[currentIdx]].catalunya;
+  const snap = HISTORY[DATES[currentIdx]];
+  const c = snap.catalunya;
   const falten = (c.dotacions_falten!=null) ? c.dotacions_falten : '—';
   const kpis = [
     {n:c.sota_minims,l:'Parcs sota mínims',cl:'warn'},
